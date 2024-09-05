@@ -18,7 +18,7 @@
     <target name="compile">
         <mkdir dir="${classes.dir}"/>
         <javac srcdir="${src.dir}" destdir="${classes.dir}" classpathref="classpath" includeantruntime="false">
-            <compilerarg line="--module-path ${javafx.sdk}/lib --add-modules javafx.controls"/>
+            <compilerarg line="--module-path ${javafx.sdk}/lib --add-modules javafx.controls,javafx.media,javafx.base"/>
         </javac>
     </target>
 
@@ -28,7 +28,12 @@
                 <path refid="classpath"/>
                 <pathelement location="${classes.dir}"/>
             </classpath>
-            <jvmarg line="--module-path ${javafx.sdk}/lib --add-modules javafx.controls"/>
+            <jvmarg line="--module-path ${javafx.sdk}/lib"/>
+            <jvmarg line="--add-modules javafx.controls,javafx.media,javafx.base"/>
+            <jvmarg line="--add-exports javafx.base/com.sun.javafx=ALL-UNNAMED"/>
+            <jvmarg line="--add-exports javafx.graphics/com.sun.javafx.tk=ALL-UNNAMED"/>
+            <jvmarg line="--add-exports javafx.graphics/com.sun.glass.utils=ALL-UNNAMED"/>
+            <jvmarg line="--add-exports javafx.graphics/com.sun.glass.ui=ALL-UNNAMED"/>
         </java>
     </target>
 </project>

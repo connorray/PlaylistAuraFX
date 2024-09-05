@@ -8,17 +8,26 @@ import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
+import javafx.scene.media.Media;
+import javafx.scene.media.MediaPlayer;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 
 public class Main extends Application {
 
     private ListView<String> songListView;
     private ObservableList<String> songs;
     private Label playlistTitle;
+    private MediaPlayer mediaPlayer;
+    private Button playButton;
+    private Button stopButton;
+    private ProgressBar timeProgressBar;
+    private Label currentTimeLabel;
+    private File currentDirectory;
 
     @Override
     public void start(Stage primaryStage) {
@@ -65,9 +74,18 @@ public class Main extends Application {
         );
         clearPlaylistButton.setOnAction(e -> clearPlaylist());
 
-        sidebar
-            .getChildren()
-            .addAll(title, chooseFolderButton, clearPlaylistButton);
+        // add playing capabilities
+        playButton = new Button("Play");
+        playButton.setStyle("-fx-background-color: #1DB954; -fx-text-fill: white;");
+        playButton.setOnAction(e -> playSong());
+        playButton.setDisable(true);
+
+        stopButton = new Button("Stop");
+        stopButton.setStyle("-fx-background-color: #E91429; -fx-text-fill: white;");
+        stopButton.setOnAction(e -> stopSong());
+        stopButton.setDisable(true);
+
+        sidebar.getChildren().addAll(title, chooseFolderButton, clearPlaylistButton, playButton, stopButton);
         return sidebar;
     }
 
@@ -86,25 +104,39 @@ public class Main extends Application {
         songListView.setStyle(
             "-fx-background-color: #191414; -fx-control-inner-background: #191414;"
         );
-
-        songListView.setCellFactory(param ->
-            new ListCell<String>() {
-                @Override
-                protected void updateItem(String item, boolean empty) {
-                    super.updateItem(item, empty);
-                    if (empty || item == null) {
-                        setText(null);
-                        setGraphic(null);
+        songListView.setCellFactory(param -> new ListCell<String>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                    setGraphic(null);
+                    setStyle("-fx-background-color: #191414;");
+                } else {
+                    setText(item);
+                    setTextFill(Color.WHITE);
+                    if (isSelected()) {
+                        setStyle("-fx-background-color: #1DB954;");
                     } else {
-                        setText(item);
-                        setTextFill(Color.WHITE);
                         setStyle("-fx-background-color: #191414;");
                     }
                 }
             }
-        );
+        });
 
-        content.getChildren().addAll(playlistTitle, songListView);
+        // Add a listener to update cell styles when selection changes
+        songListView.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
+            songListView.refresh();
+        });
+
+        timeProgressBar = new ProgressBar(0);
+        timeProgressBar.setPrefWidth(300);
+        timeProgressBar.setStyle("-fx-accent: #1DB954;");
+
+        currentTimeLabel = new Label("0:00 / 0:00");
+        currentTimeLabel.setTextFill(Color.WHITE);
+
+        content.getChildren().addAll(playlistTitle, songListView, timeProgressBar, currentTimeLabel);
         return content;
     }
 
@@ -114,11 +146,61 @@ public class Main extends Application {
         File selectedDirectory = directoryChooser.showDialog(null);
 
         if (selectedDirectory != null) {
+            currentDirectory = selectedDirectory;
             loadSongsFromDirectory(selectedDirectory);
-            playlistTitle.setText(
-                "Your Playlist: " + selectedDirectory.getName()
-            );
+            playlistTitle.setText("Your Playlist: " + selectedDirectory.getName());
+            playButton.setDisable(false);
         }
+    }
+    
+    private void playSong() {
+        String selectedSong = songListView.getSelectionModel().getSelectedItem();
+        if (selectedSong == null) return;
+
+        if (mediaPlayer != null) {
+            mediaPlayer.stop();
+        }
+
+        File file = new File(currentDirectory, selectedSong);
+        Media media = new Media(file.toURI().toString());
+        mediaPlayer = new MediaPlayer(media);
+
+        mediaPlayer.currentTimeProperty().addListener((observable, oldValue, newValue) -> {
+            timeProgressBar.setProgress(newValue.toSeconds() / media.getDuration().toSeconds());
+            updateTimeLabel();
+        });
+
+        mediaPlayer.setOnReady(() -> {
+            updateTimeLabel();
+        });
+
+        mediaPlayer.play();
+        stopButton.setDisable(false);
+        songListView.refresh(); // Refresh to update the visual selection
+    }
+
+    private void stopSong() {
+        if (mediaPlayer != null) {
+            mediaPlayer.stop();
+            timeProgressBar.setProgress(0);
+            updateTimeLabel();
+        }
+        stopButton.setDisable(true);
+        songListView.refresh(); // Refresh to update the visual selection
+    }
+
+    private void updateTimeLabel() {
+        if (mediaPlayer != null) {
+            Duration current = mediaPlayer.getCurrentTime();
+            Duration total = mediaPlayer.getTotalDuration();
+            currentTimeLabel.setText(formatTime(current) + " / " + formatTime(total));
+        }
+    }
+
+    private String formatTime(Duration duration) {
+        int minutes = (int) Math.floor(duration.toMinutes());
+        int seconds = (int) Math.floor(duration.toSeconds() % 60);
+        return String.format("%d:%02d", minutes, seconds);
     }
 
     private void loadSongsFromDirectory(File directory) {
@@ -134,9 +216,12 @@ public class Main extends Application {
         }
     }
 
-    private void clearPlaylist() {
+   private void clearPlaylist() {
         songs.clear();
         playlistTitle.setText("Your Playlist");
+        stopSong();
+        playButton.setDisable(true);
+        songListView.refresh(); // Refresh to clear any visual selection
     }
 
     public static void main(String[] args) {

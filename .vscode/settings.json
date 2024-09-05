@@ -1,0 +1,8 @@
+{
+  "java.project.referencedLibraries": [
+    "lib/**/*.jar",
+    "/Users/raymondyoo/javafx-sdk-22.0.2/lib/*.jar"
+  ],
+  "java.project.sourcePaths": ["src"],
+  "java.configuration.updateBuildConfiguration": "automatic"
+}
