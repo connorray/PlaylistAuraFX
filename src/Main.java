@@ -7,6 +7,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.effect.DropShadow;
 import javafx.scene.layout.*;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
@@ -34,7 +35,7 @@ public class Main extends Application {
         primaryStage.setTitle("Playlist Aura Check");
 
         BorderPane mainLayout = new BorderPane();
-        mainLayout.setStyle("-fx-background-color: #191414;");
+        mainLayout.setStyle("-fx-background-color: #F5F5F7;"); // Light gray background
 
         VBox sidebar = createSidebar();
         mainLayout.setLeft(sidebar);
@@ -43,11 +44,7 @@ public class Main extends Application {
         mainLayout.setCenter(content);
 
         Scene scene = new Scene(mainLayout, 900, 600);
-        scene
-            .getStylesheets()
-            .add(
-                "https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap"
-            );
+        scene.getStylesheets().add("https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@400;700&display=swap");
         primaryStage.setScene(scene);
         primaryStage.show();
     }
@@ -55,38 +52,43 @@ public class Main extends Application {
     private VBox createSidebar() {
         VBox sidebar = new VBox(20);
         sidebar.setPadding(new Insets(20));
-        sidebar.setStyle("-fx-background-color: #000000;");
+        sidebar.setStyle("-fx-background-color: #E5E5E7;"); // Light gray sidebar
         sidebar.setPrefWidth(200);
 
         Label title = new Label("Playlist Aura");
-        title.setFont(Font.font("Montserrat", FontWeight.BOLD, 20));
-        title.setTextFill(Color.WHITE);
+        title.setFont(Font.font("SF Pro Display", FontWeight.BOLD, 20));
+        title.setTextFill(Color.BLACK);
 
-        Button chooseFolderButton = new Button("Choose MP3 Folder");
-        chooseFolderButton.setStyle(
-            "-fx-background-color: #1DB954; -fx-text-fill: white;"
-        );
+        Button chooseFolderButton = createStyledButton("Choose MP3 Folder", "#007AFF");
         chooseFolderButton.setOnAction(e -> chooseFolder());
 
-        Button clearPlaylistButton = new Button("Clear Playlist");
-        clearPlaylistButton.setStyle(
-            "-fx-background-color: #E91429; -fx-text-fill: white;"
-        );
+        Button clearPlaylistButton = createStyledButton("Clear Playlist", "#FF3B30");
         clearPlaylistButton.setOnAction(e -> clearPlaylist());
 
-        // add playing capabilities
-        playButton = new Button("Play");
-        playButton.setStyle("-fx-background-color: #1DB954; -fx-text-fill: white;");
+        playButton = createStyledButton("Play", "#34C759");
         playButton.setOnAction(e -> playSong());
         playButton.setDisable(true);
 
-        stopButton = new Button("Stop");
-        stopButton.setStyle("-fx-background-color: #E91429; -fx-text-fill: white;");
+        stopButton = createStyledButton("Stop", "#FF9500");
         stopButton.setOnAction(e -> stopSong());
         stopButton.setDisable(true);
 
         sidebar.getChildren().addAll(title, chooseFolderButton, clearPlaylistButton, playButton, stopButton);
         return sidebar;
+    }
+
+    private Button createStyledButton(String text, String color) {
+        Button button = new Button(text);
+        button.setStyle(
+            "-fx-background-color: " + color + ";" +
+            "-fx-text-fill: white;" +
+            "-fx-font-family: 'SF Pro Display';" +
+            "-fx-font-size: 14px;" +
+            "-fx-background-radius: 20;" +
+            "-fx-padding: 8 16 8 16;"
+        );
+        button.setEffect(new DropShadow(5, Color.gray(0.5, 0.3)));
+        return button;
     }
 
     private VBox createContent() {
@@ -95,14 +97,18 @@ public class Main extends Application {
         content.setAlignment(Pos.TOP_CENTER);
 
         playlistTitle = new Label("Your Playlist");
-        playlistTitle.setFont(Font.font("Montserrat", FontWeight.BOLD, 24));
-        playlistTitle.setTextFill(Color.WHITE);
+        playlistTitle.setFont(Font.font("SF Pro Display", FontWeight.BOLD, 24));
+        playlistTitle.setTextFill(Color.BLACK);
 
         songs = FXCollections.observableArrayList();
         songListView = new ListView<>(songs);
         songListView.setPrefHeight(400);
         songListView.setStyle(
-            "-fx-background-color: #191414; -fx-control-inner-background: #191414;"
+            "-fx-background-color: white;" +
+            "-fx-background-radius: 10;" +
+            "-fx-border-radius: 10;" +
+            "-fx-border-color: #E5E5E7;" +
+            "-fx-border-width: 1px;"
         );
         songListView.setCellFactory(param -> new ListCell<String>() {
             @Override
@@ -111,19 +117,19 @@ public class Main extends Application {
                 if (empty || item == null) {
                     setText(null);
                     setGraphic(null);
-                    setStyle("-fx-background-color: #191414;");
+                    setStyle("-fx-background-color: transparent;");
                 } else {
                     setText(item);
-                    setTextFill(Color.WHITE);
+                    setTextFill(Color.BLACK);
+                    setFont(Font.font("SF Pro Display", 14));
                     if (isSelected()) {
-                        setStyle("-fx-background-color: #1DB954;");
+                        setStyle("-fx-background-color: #007AFF; -fx-text-fill: white;");
                     } else {
-                        setStyle("-fx-background-color: #191414;");
+                        setStyle("-fx-background-color: transparent;");
                     }
                 }
             }
         });
-
         // Add a listener to update cell styles when selection changes
         songListView.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
             songListView.refresh();
@@ -131,10 +137,11 @@ public class Main extends Application {
 
         timeProgressBar = new ProgressBar(0);
         timeProgressBar.setPrefWidth(300);
-        timeProgressBar.setStyle("-fx-accent: #1DB954;");
+        timeProgressBar.setStyle("-fx-accent: #007AFF;");
 
         currentTimeLabel = new Label("0:00 / 0:00");
-        currentTimeLabel.setTextFill(Color.WHITE);
+        currentTimeLabel.setTextFill(Color.BLACK);
+        currentTimeLabel.setFont(Font.font("SF Pro Display", 14));
 
         content.getChildren().addAll(playlistTitle, songListView, timeProgressBar, currentTimeLabel);
         return content;
